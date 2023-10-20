@@ -35,6 +35,7 @@ export const register = async (req: Request, res: Response) => {
 export const login = (req: Request, res: Response) => {
   try {
     const { email, password } = req.body as User;
+    
   } catch (error) {
     console.log(error);
     res.status(500).send({
