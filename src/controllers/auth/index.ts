@@ -1,7 +1,10 @@
+import { UserNoPassword } from "./../../middlewares/auth/index";
 import { Request, Response } from "express";
-import { PrismaClient, User } from "@prisma/client";
+import { Prisma, PrismaClient, User } from "@prisma/client";
 import { hash } from "../../utils/helper";
 import { BaseResponse } from "../../types";
+import { error } from "console";
+import { signToken } from "../../utils/jwt";
 const prisma = new PrismaClient();
 
 export const register = async (req: Request, res: Response) => {
@@ -11,7 +14,7 @@ export const register = async (req: Request, res: Response) => {
     const user: User | null = await prisma.user.create({
       data: {
         email,
-        password: hash(password),
+        password: hash(password ?? ""),
       },
     });
 
@@ -23,21 +26,60 @@ export const register = async (req: Request, res: Response) => {
       } as BaseResponse<User>);
     }
   } catch (err) {
-    console.log(err);
-    res.status(500).send({
-      message: "Đăng ký thất bại",
-      code: 200,
-      data: null,
-    } as BaseResponse<null>);
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        res.status(500).send({
+          message: "Đăng ký thất bại, Email đã tồn tại",
+          code: 400,
+          data: null,
+        } as BaseResponse<null>);
+      } else {
+        res.status(500).send({
+          message: "Đăng ký thất bại, vui lòng thử lại sau",
+          code: 500,
+          data: null,
+        } as BaseResponse<null>);
+      }
+    }
   }
 };
 
-export const login = (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body as User;
-    
+    const user = req.user;
+    if (!user) {
+      throw error;
+    }
+
+    const accessToken = signToken({
+      data: user,
+      type: "token",
+    });
+    const refreshToken = signToken({
+      data: user,
+      type: "accessToken",
+    });
+
+    if (!accessToken || !refreshToken) throw error;
+
+    res.status(200).send({
+      message: "Đăng nhập thành công",
+      code: 200,
+      data: {
+        user,
+        token: {
+          accessToken,
+          refreshToken,
+        },
+      },
+    } as BaseResponse<{
+      token: {
+        accessToken: string;
+        refreshToken: string;
+      };
+      user: UserNoPassword;
+    }>);
   } catch (error) {
-    console.log(error);
     res.status(500).send({
       message: "Đăng nhập thất bại",
       code: 200,
