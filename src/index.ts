@@ -10,9 +10,6 @@ dotenv.config();
 const app: Express = express();
 const port = process.env.PORT ?? 4000;
 app.use(json());
-app.get("/test", (req, res) => {
-  res.send("Oke");
-});
 app.use("/api/v1", rootRouter);
 app.use("/static", express.static(path.join(__dirname, "../public")));
 app.use(cors());
