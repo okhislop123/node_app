@@ -29,7 +29,7 @@ model Post {
     createAt  DateTime @default(now())
     updateAt  DateTime @updatedAt
     title     String
-    content   String
+    content   String   @db.Text
     published Boolean  @default(false)
     userId    Int
     author    User     @relation(fields: [userId], references: [id])

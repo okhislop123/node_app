@@ -1,8 +1,10 @@
+import jwt from "jsonwebtoken";
 import { error } from "console";
 import { PrismaClient, User } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { BaseResponse } from "../../types";
 import { compareHash } from "../../utils/helper";
+import { verifyToken } from "../../utils/jwt";
 
 export type UserNoPassword = Pick<
   User,
@@ -80,5 +82,33 @@ export const checkCorrectPassword = async (
       code: 200,
       data: null,
     } as BaseResponse<null>);
+  }
+};
+
+export const checkTokenUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader?.split(" ")[1];
+  if (!token) {
+    res.status(401).send({
+      code: 401,
+      message: "Failed authentication",
+      data: null,
+    } as BaseResponse<null>);
+  } else {
+    const tokenVerify = verifyToken(token) as jwt.JwtPayload;
+    if (tokenVerify?.data) {
+      req.user = tokenVerify?.data as UserNoPassword;
+      next();
+    } else {
+      res.status(403).send({
+        code: 403,
+        message: "Forbidden",
+        data: null,
+      } as BaseResponse<null>);
+    }
   }
 };

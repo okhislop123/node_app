@@ -18,5 +18,5 @@ export const signToken = (data: DataSignToken) => {
 };
 
 export const verifyToken = (token: string) => {
-  jwt.verify(token, process.env.SECRET_KEY ?? "");
+  return jwt.verify(token, process.env.SECRET_KEY ?? "");
 };

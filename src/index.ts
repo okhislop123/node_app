@@ -4,12 +4,14 @@ import path from "path";
 import rootRouter from "./routes";
 import cors from "cors";
 import swaggerDocs from "./utils/swagger";
+import morgan from 'morgan'
 
 dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT ?? 4000;
 app.use(json());
+app.use(morgan("dev"))
 app.use("/api/v1", rootRouter);
 app.use("/static", express.static(path.join(__dirname, "../public")));
 app.use(cors());

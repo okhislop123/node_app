@@ -28,7 +28,7 @@ export const register = async (req: Request, res: Response) => {
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2002") {
-        res.status(500).send({
+        res.status(400).send({
           message: "Đăng ký thất bại, Email đã tồn tại",
           code: 400,
           data: null,
@@ -80,6 +80,7 @@ export const login = async (req: Request, res: Response) => {
       user: UserNoPassword;
     }>);
   } catch (error) {
+    console.log("err", error);
     res.status(500).send({
       message: "Đăng nhập thất bại",
       code: 200,
