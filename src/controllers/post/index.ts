@@ -1,39 +1,46 @@
 import { Post, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { BaseResponse } from "../../types";
+import { BasePagination, BaseResponse } from "../../types";
 const prisma = new PrismaClient();
 
 export const getAllPost = async (req: Request, res: Response) => {
   try {
-    const { title, content, published } = req.query;
-    console.log("title", title);
+    const { title, content, published, page, totalItemsPerPage } = req.query;
 
-    const data: Post[] = await prisma.post.findMany({
-      skip: 0,
-      take: 5,
-      orderBy: {
-        id: "desc",
-      },
-      where: {
-        ...(published !== undefined
-          ? {
-              published: {
-                equals: published === "true",
-              },
-            }
-          : {}),
-      },
-    });
-    const newData = await prisma.$queryRaw`
-      SELECT * FROM Post
-      WHERE content LIKE ${`%${title}%`}
-    `;
-    console.log("newData", newData);
+    const contentQuery = content ? ` and content like '%${content}%' ` : " ";
+    const titleQuery = title ? ` and title like '%${title}%'` : " ";
+    const publishedQuery = published ? ` and published = ${published}` : " ";
+
+    const countPageQuery: [{ count: number }] = await prisma.$queryRawUnsafe(
+      `Select count(*) as count from Post where 1 = 1 ${contentQuery} ${titleQuery} ${publishedQuery}`
+    );
+
+    const countPage = Number(
+      countPageQuery[0].count.toString().replace("n", "")
+    );
+
+    const currentPage = Number(page) || 1;
+    const elementCountOnPage = Number(totalItemsPerPage) || 20;
+    const totalPage =
+      countPage % elementCountOnPage == 0
+        ? countPage / elementCountOnPage
+        : Math.floor(countPage / elementCountOnPage) + 1;
+    let startPage = (currentPage - 1) * elementCountOnPage;
+
+    const data = await prisma.$queryRawUnsafe(
+      `Select * FROM Post where 1 = 1 ${contentQuery} ${titleQuery} ${publishedQuery} order by id desc limit ${startPage},${elementCountOnPage}`
+    );
+
     res.status(200).send({
       code: 200,
       message: "Get all post succeeded",
-      data,
-    } as BaseResponse<Post[]>);
+      data: {
+        currentPage,
+        totalItem: countPage || 0,
+        totalPage,
+        data,
+      },
+    } as BaseResponse<BasePagination<Post[]>>);
   } catch (error) {
     console.log(error);
     res.status(500).send({

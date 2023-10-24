@@ -99,7 +99,7 @@ export const checkTokenUser = async (
       data: null,
     } as BaseResponse<null>);
   } else {
-    const tokenVerify = verifyToken(token) as jwt.JwtPayload;
+    const tokenVerify: jwt.JwtPayload = verifyToken(token) as jwt.JwtPayload;
     if (tokenVerify?.data) {
       req.user = tokenVerify?.data as UserNoPassword;
       next();

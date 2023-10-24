@@ -3,3 +3,10 @@ export interface BaseResponse<T> {
   message: string;
   data: T;
 }
+
+export interface BasePagination<T> {
+  totalPage: number;
+  totalItem: number;
+  currentPage: number;
+  data: T;
+}
